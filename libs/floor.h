@@ -28,5 +28,7 @@ void floor_init(	floor_t *f, SDL_Renderer *r, uint8_t col,
 void floor_draw(floor_t *f);
 void floor_load_texture(floor_t *f, char *fileName);
 void floor_load_mosaic(floor_t *f, char *fileName);
-
+uint32_t floor_mosaic_rows(floor_t *f);
+uint32_t floor_mosaic_cols(floor_t *f);
+void floor_free(floor_t *f);
 #endif

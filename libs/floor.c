@@ -50,6 +50,14 @@ void floor_load_mosaic(floor_t *f, char *fileName){
 	fclose(fd);
 }
 
+uint32_t floor_mosaic_rows(floor_t *f){
+	return f->rows;
+}
+
+uint32_t floor_mosaic_cols(floor_t *f){
+	return f->cols;
+}
+
 void floor_free(floor_t *f){
-	printf("Nada de momento\n");
+	printf("Implementar\n");
 }
