@@ -58,6 +58,7 @@ int main(char argc, char * argv[]){
 		row++;
 		first = 0;
 		printf("Linea leida %s --> %lu\n",chunk,strlen(chunk));
+		col = 0;
 		while(first + 1 < strlen(chunk)){
 			par(chunk,&first,&index,&z);
 			col++;

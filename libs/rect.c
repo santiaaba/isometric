@@ -29,13 +29,13 @@ uint32_t rect_get_height(rect_t *rect){
 
 uint16_t rect_collision(rect_t *rect, rect_t *rect2){
 	
-	uint32_t b_x = point_get_x(rect->point);
-	uint32_t b_y = point_get_y(rect->point);
+	uint32_t b_x = point_x(rect->point);
+	uint32_t b_y = point_y(rect->point);
 	uint32_t b_h = rect->height;
 	uint32_t b_w = rect->width;
 
-	uint32_t o_x = point_get_x(rect_get_point(rect2));
-	uint32_t o_y = point_get_y(rect_get_point(rect2));
+	uint32_t o_x = point_x(rect_get_point(rect2));
+	uint32_t o_y = point_y(rect_get_point(rect2));
 	uint32_t o_h = rect_get_height(rect2);
 	uint32_t o_w = rect_get_width(rect2);
 
