@@ -1,1 +1,20 @@
 http://www.wired-weasel.com/users/serhid/tutos/tut8.html
+
+playground determina la parte del mosaico a dibujar. Las coordenadas de playground
+deben ser relativas a las coordenadas del mosaico???
+
+
+Tengo las coordenadas del destino que deben ser relativas a screen. O sea... 0,0 de destino debe ser el punto
+superior izquierdo de screen. o sea que si screen está en (100,100) el detino debe arrancar en 100,100.
+
+
+El punto del rectangulo playground, representa el desplazamiento del primer tile de la matriz. O sea el tile (0,0).
+
+Suponiendo que playground tenga el punto (0,0), significa que el tile (0,0) concide con el inicio del playround.
+A esto hay que sumarle el desplazamiento de screen. Que es donde deseamos ubicar el dibujo. O sea que al punto
+de dest hay que sumarle el punto de screen.
+
+
+
+Las coordenadas del playground solo sirven para determinar la parte a dibujar.
+

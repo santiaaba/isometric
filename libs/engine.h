@@ -27,7 +27,8 @@ typedef struct {
 	SDL_Texture *tileset;
 	SDL_Renderer *renderer;
 	SDL_Rect screen;
-	rect_t *playground;
+	SDL_Rect playground;
+	//rect_t *playground;
 	uint8_t tileset_cols;		//cantidad de columnas en el png
 	SDL_Rect tileset_cut;		//corte del archivo png
 	bool debug;

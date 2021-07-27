@@ -6,8 +6,6 @@ void engine_create(engine_t **e, SDL_Renderer *r){
 	(*e)->debug = false;
 	(*e)->tileset_cut.w = TILE_WIDTH;
 	(*e)->tileset_cut.h = TILE_HEIGHT;
-	(*e)->playground = (rect_t*)malloc(sizeof(rect_t));
-	rect_init((*e)->playground);
 }
 
 void engine_debug(engine_t *e, bool debug){
@@ -21,48 +19,92 @@ int static a2to1(engine_t *e,uint16_t row, uint16_t col){
 
 void engine_draw(engine_t *e){
 
-	void draw_tile(engine_t *e, uint64_t i, uint64_t j, SDL_Rect *dest){
+	void draw_tile(engine_t *e, uint64_t i, uint64_t j, SDL_Rect *tile){
 		uint8_t index;
+		SDL_Rect dest;
+		int tile_y_aux;
+		int tile_x_aux;
 
 		printf("Dibujamos tile (%lu,%lu)\n",i,j);
 		index = e->mosaic[a2to1(e,i,j)].index;
-		e->tileset_cut.y = (index / e->tileset_cols) * TILE_HEIGHT;
+
+		e->tileset_cut.y = ((index / e->tileset_cols) * TILE_HEIGHT);
 		e->tileset_cut.x = (index % e->tileset_cols) * TILE_WIDTH;
-		e->tileset_cut.w = TILE_WIDTH;
+
+		/* Guardamos el valor original para reponerlo luego */
+		tile_y_aux = tile->y;
+		tile_x_aux = tile->x;
+
+		tile->h = TILE_HEIGHT;
+		tile->w = TILE_WIDTH;
+		/* Recorte superior */
+		if(e->playground.y > tile->y){
+			printf("ENTRO recorte superior\n");
+			tile->h = tile->y + TILE_HEIGHT - e->playground.y;
+			tile->y = e->playground.y;
+			e->tileset_cut.y += (TILE_HEIGHT - tile->h);
+		}
+		/* Recorte izquierdo */
+		if(e->playground.x > tile->x){
+			printf("ENTRO recorte izquierdo\n");
+			tile->w = tile->x + TILE_WIDTH - e->playground.x;
+			tile->x = e->playground.x;
+			e->tileset_cut.x += (TILE_WIDTH - tile->w);
+		}
+		/* Recorte inferior */
+		if((e->playground.y + e->playground.h) < (tile->y + TILE_HEIGHT)){
+			printf("ENTRO recorte inferior\n");
+			tile->h = TILE_HEIGHT - (tile->y + TILE_HEIGHT -(e->playground.y + e->playground.h));
+		}
+		/* Recorte derecho */
+		if((e->playground.x + e->playground.w) < (tile->x + TILE_WIDTH)){
+			printf("ENTRO recorte derecho\n");
+			tile->w = TILE_WIDTH - (tile->x + TILE_WIDTH -(e->playground.x + e->playground.w));
+		}
+
+		e->tileset_cut.h = tile->h;
+		e->tileset_cut.w = tile->w;
+
+/*
+		tile->w = e->tileset_cut.w;
+*/
+
+	/*
+		e->tileset_cut.y = (index / e->tileset_cols) * TILE_HEIGHT;
 		e->tileset_cut.h = TILE_HEIGHT;
-		/* Dimenciones del destino. Deben coincidir con
-		   las dimenciones del tileset_cut */
-		dest->w = e->tileset_cut.w;
+
 		dest->h = e->tileset_cut.h;
-		SDL_RenderCopy(e->renderer,e->tileset,&(e->tileset_cut),dest);
+
+	*/
+		/* Sumamos el desplazamiento del screen */
+		dest.x = e->screen.x + tile->x - e->playground.x;
+		dest.y = e->screen.y + tile->y - e->playground.y;
+		dest.w = tile->w;
+		dest.h = tile->h;
+		printf("(x:%i,y:%i,w:%i,h:%i)\n",dest.x,dest.y,dest.w,dest.h);
+		SDL_RenderCopy(e->renderer,e->tileset,&(e->tileset_cut),&dest);
 
 		if(e->debug){
 			SDL_RenderPresent(e->renderer);
 			SDL_Delay(300);
 		}
+
+		/* Estauramos el valor original de tile->y y tile->x */
+		tile->y = tile_y_aux;
+		tile->x = tile_x_aux;
 	}
 
-	SDL_Rect dest;
+	SDL_Rect tile;
 	int64_t i,j,k,cols,rows,col,row;
 	int y1,y2,x1,x2;
 	int printed;
 	
 	printf("Comenzamos a dibujar\n");
 
-	/* Determinamos los rectangulos de grilla de inicio */
-/*
-	gx = e->playground.x / TILE_WIDTH;
-	gy = e->playground.y / TILE_HEIGHT;
-*/
+	/* Indicamos el punto inicial para el sprite (0,0) */
 
-	/* k es la cantidad de filas a dibujar. Prueba */
-	/* Loop arriba -> abajo */
-	/* Loop izquierda -> derecha */
-	dest.x = e->screen.x - TILE_WIDTH / 2; /* Para prueba */
-	dest.y = e->screen.y; /* Para prueba */
-
-	dest.x = 300;
-	dest.y = 100;
+	tile.x = 0;
+	tile.y = 0;
 
 	/* Mitad superior. Imprimimos a partir de la fila */
 	row = 0;
@@ -72,52 +114,40 @@ void engine_draw(engine_t *e){
 		i = row;
 		printed = 0;
 		while(j< e->mosaic_cols && i>=0){
-			draw_tile(e,i,j,&dest);
+			draw_tile(e,i,j,&tile);
 			printed ++;
-			dest.x += TILE_WIDTH;
+			tile.x += TILE_WIDTH;
 			j++;
 			i--;
 		}
 		printf("\n");
 		printf("REstamos: %i\n",printed);
-		dest.y += TILE_HEIGHT/2;
-		dest.x -= (TILE_WIDTH/2 + TILE_WIDTH * printed);
+		tile.y += TILE_HEIGHT/2;
+		tile.x -= (TILE_WIDTH/2 + TILE_WIDTH * printed);
 		row++;
 	}
-
 	printf("Restantes\n");
 	printf("Mosaic_cols:%i\n",e->mosaic_cols);
 
-
-	/* Mitad inferiori. Imprimimos a partir de la columna */
+	/* Mitad inferior. Imprimimos a partir de la columna */
 	row = row - 1;
 	col = 1;
-	dest.x += TILE_WIDTH;
+	tile.x += TILE_WIDTH;
 	while(col < e->mosaic_cols){
 		i = row;
 		j = col;
 		printed = 0;
 		while(j<e->mosaic_cols && i >= 0){
-			draw_tile(e,i,j,&dest);
-			dest.x += TILE_WIDTH;
+			draw_tile(e,i,j,&tile);
+			tile.x += TILE_WIDTH;
 			i--;
 			j++;
 			printed++;
 		}
 		printf("\n");
 		col++;
-
-		dest.x -= (TILE_WIDTH/2 + TILE_WIDTH * (printed - 1));
-	/*
-		if(e->mosaic_cols >= col){
-			printf("Restando: %li\n",e->mosaic_cols-col);
-			dest.x -= (TILE_WIDTH/2 + TILE_WIDTH * (e->mosaic_cols-col));
-		} else {
-			printf("Entro por aca: %i - 1/2 + %li\n",dest.x,i);
-			dest.x -= TILE_WIDTH/2 + i;
-		}
-	*/
-		dest.y += TILE_HEIGHT/2;
+		tile.x -= (TILE_WIDTH/2 + TILE_WIDTH * (printed - 1));
+		tile.y += TILE_HEIGHT/2;
 	}
 
 
@@ -128,13 +158,9 @@ void engine_draw(engine_t *e){
 		y1 = e->screen.y;
 		y2 = e->screen.y + e->screen.h;
 		SDL_SetRenderDrawColor(e->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-		/* linea horizontal superior */
 		SDL_RenderDrawLine(e->renderer,x1,y1,x2,y1);
-		/* linea horizontal inferior */
 		SDL_RenderDrawLine(e->renderer,x1,y2,x2,y2);
-		/* linea vertical izquierda */
 		SDL_RenderDrawLine(e->renderer,x1,y1,x1,y2);
-		/* linea vertical derecha */
 		SDL_RenderDrawLine(e->renderer,x2,y1,x2,y2);
 	}
 	SDL_RenderPresent(e->renderer);
@@ -200,11 +226,15 @@ void engine_set_screen(engine_t *e, int x, int y, int w, int h){
 	/* Playground posee las mismas dimenciones que screen pero
 		sus coordenadas son logicas al mosaico */
 
-	rect_set_dim(e->playground,w,h);
+	e->playground.w = w;
+	e->playground.h = h;
+	//rect_set_dim(e->playground,w,h);
 }
 
 void engine_set_playground(engine_t *e, uint32_t x, uint32_t y){
-	rect_set_point(e->playground,x,y);
+	e->playground.x = x;
+	e->playground.y = y;
+	//rect_set_point(e->playground,x,y);
 }
 
 uint32_t engine_mosaic_rows(engine_t *e){
