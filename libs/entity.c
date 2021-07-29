@@ -1,8 +1,10 @@
 #include "entity.h"
 
-void entity_create(entity_t **e, SDL_Renderer *r){
+void entity_create(entity_t **e, SDL_Renderer *r, int tile_width, int tile_height){
 	*e = (entity_t*)malloc(sizeof(entity_t));
 	(*e)->renderer = r;
+	(*e)->tile_width = tile_width;
+	(*e)->tile_height = tile_height;
 	(*e)->debug = false;
 	(*e)->texture = NULL;
 }
@@ -16,8 +18,8 @@ void entity_draw(entity_t *e, SDL_Rect *dest_tile){
 
 	/* Arrancamos desde el vertice inferior del tile isometrico. Que viene
 		siendo el centro de la linea orizonal del rectangulo dest_tile*/
-	x_iso = dest_tile->x + TILE_WIDTH/2;
-	y_iso = dest_tile->y + TILE_HEIGHT;
+	x_iso = dest_tile->x + e->tile_width/2;
+	y_iso = dest_tile->y + e->tile_height;
 
 	/* Debemos calcular las coordenadas del dest que dibuja el entity */
 	dest.x = x_iso - e->x_base - e->y;

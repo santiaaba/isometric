@@ -5,7 +5,6 @@
 #include <SDL2/SDL_image.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "isometric.h"
 #include "rect.h"
 #include "lista.h"
 #include "entity.h"
@@ -24,6 +23,8 @@ typedef struct {
 	tile_t *mosaic;
 	uint32_t mosaic_rows;		//Tamano fisico filas de mosaic
 	uint32_t mosaic_cols;		//tamaño fisico columnas de mosaic
+	int tile_width;				// Anchura de los tile para el suelo
+	int tile_height;				// Altura de los tile para el suelo
 	SDL_Texture *tileset;
 	SDL_Renderer *renderer;
 	SDL_Rect screen;
@@ -37,7 +38,7 @@ typedef struct {
 
 void engine_create(	engine_t **e, SDL_Renderer *r);
 void engine_draw(engine_t *e);
-void engine_set_tileset(engine_t *e, char *fileName, int columns, int height, int width);
+void engine_set_tileset(engine_t *e, char *fileName, int columns, int tile_width, int tile_height);
 void engine_set_screen(engine_t *e, int x, int y, int w, int h);
 void engine_add_entity(engine_t *e, int col, int row, entity_t *entity);
 void engine_set_playground(engine_t *e, uint32_t x, uint32_t y);
