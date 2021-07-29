@@ -4,6 +4,7 @@ void engine_create(engine_t **e, SDL_Renderer *r){
 	*e = (engine_t*)malloc(sizeof(engine_t));
 	(*e)->renderer = r;
 	(*e)->debug = false;
+	(*e)->show_screen_rect = false;
 	(*e)->tileset_cut.w = TILE_WIDTH;
 	(*e)->tileset_cut.h = TILE_HEIGHT;
 }
@@ -17,142 +18,203 @@ int static a2to1(engine_t *e,uint16_t row, uint16_t col){
 	return row * e->mosaic_cols + col;
 }
 
-void engine_draw(engine_t *e){
+void static draw_tile(engine_t *e, uint64_t i, uint64_t j, SDL_Rect *tile){
+	uint8_t index;
+	SDL_Rect dest;
+	int tile_y_aux;
+	int tile_x_aux;
+	lista_t *entities;
+	entity_t *entity;
 
-	void draw_tile(engine_t *e, uint64_t i, uint64_t j, SDL_Rect *tile){
-		uint8_t index;
-		SDL_Rect dest;
-		int tile_y_aux;
-		int tile_x_aux;
+	printf("Dibujamos tile (%lu,%lu)\n",i,j);
+	index = e->mosaic[a2to1(e,i,j)].index;
+	entities = e->mosaic[a2to1(e,i,j)].entities;
 
-		printf("Dibujamos tile (%lu,%lu)\n",i,j);
-		index = e->mosaic[a2to1(e,i,j)].index;
+	e->tileset_cut.y = ((index / e->tileset_cols) * TILE_HEIGHT);
+	e->tileset_cut.x = (index % e->tileset_cols) * TILE_WIDTH;
 
-		e->tileset_cut.y = ((index / e->tileset_cols) * TILE_HEIGHT);
-		e->tileset_cut.x = (index % e->tileset_cols) * TILE_WIDTH;
+	/* Guardamos el valor original para reponerlo luego */
+	tile_y_aux = tile->y;
+	tile_x_aux = tile->x;
 
-		/* Guardamos el valor original para reponerlo luego */
-		tile_y_aux = tile->y;
-		tile_x_aux = tile->x;
-
-		tile->h = TILE_HEIGHT;
-		tile->w = TILE_WIDTH;
-		/* Recorte superior */
-		if(e->playground.y > tile->y){
-			printf("ENTRO recorte superior\n");
-			tile->h = tile->y + TILE_HEIGHT - e->playground.y;
-			tile->y = e->playground.y;
-			e->tileset_cut.y += (TILE_HEIGHT - tile->h);
-		}
-		/* Recorte izquierdo */
-		if(e->playground.x > tile->x){
-			printf("ENTRO recorte izquierdo\n");
-			tile->w = tile->x + TILE_WIDTH - e->playground.x;
-			tile->x = e->playground.x;
-			e->tileset_cut.x += (TILE_WIDTH - tile->w);
-		}
-		/* Recorte inferior */
-		if((e->playground.y + e->playground.h) < (tile->y + TILE_HEIGHT)){
-			printf("ENTRO recorte inferior\n");
-			tile->h = TILE_HEIGHT - (tile->y + TILE_HEIGHT -(e->playground.y + e->playground.h));
-		}
-		/* Recorte derecho */
-		if((e->playground.x + e->playground.w) < (tile->x + TILE_WIDTH)){
-			printf("ENTRO recorte derecho\n");
-			tile->w = TILE_WIDTH - (tile->x + TILE_WIDTH -(e->playground.x + e->playground.w));
-		}
-
-		e->tileset_cut.h = tile->h;
-		e->tileset_cut.w = tile->w;
-
-/*
-		tile->w = e->tileset_cut.w;
-*/
-
-	/*
-		e->tileset_cut.y = (index / e->tileset_cols) * TILE_HEIGHT;
-		e->tileset_cut.h = TILE_HEIGHT;
-
-		dest->h = e->tileset_cut.h;
-
-	*/
-		/* Sumamos el desplazamiento del screen */
-		dest.x = e->screen.x + tile->x - e->playground.x;
-		dest.y = e->screen.y + tile->y - e->playground.y;
-		dest.w = tile->w;
-		dest.h = tile->h;
-		printf("(x:%i,y:%i,w:%i,h:%i)\n",dest.x,dest.y,dest.w,dest.h);
-		SDL_RenderCopy(e->renderer,e->tileset,&(e->tileset_cut),&dest);
-
-		if(e->debug){
-			SDL_RenderPresent(e->renderer);
-			SDL_Delay(300);
-		}
-
-		/* Estauramos el valor original de tile->y y tile->x */
-		tile->y = tile_y_aux;
-		tile->x = tile_x_aux;
+	tile->h = TILE_HEIGHT;
+	tile->w = TILE_WIDTH;
+	/* Recorte superior */
+	if(e->playground.y > tile->y){
+		printf("ENTRO recorte superior\n");
+		tile->h = tile->y + TILE_HEIGHT - e->playground.y;
+		tile->y = e->playground.y;
+		e->tileset_cut.y += (TILE_HEIGHT - tile->h);
+	}
+	/* Recorte izquierdo */
+	if(e->playground.x > tile->x){
+		printf("ENTRO recorte izquierdo\n");
+		tile->w = tile->x + TILE_WIDTH - e->playground.x;
+		tile->x = e->playground.x;
+		e->tileset_cut.x += (TILE_WIDTH - tile->w);
+	}
+	/* Recorte inferior */
+	if((e->playground.y + e->playground.h) < (tile->y + TILE_HEIGHT)){
+		printf("ENTRO recorte inferior\n");
+		tile->h = TILE_HEIGHT - (tile->y + TILE_HEIGHT -(e->playground.y + e->playground.h));
+	}
+	/* Recorte derecho */
+	if((e->playground.x + e->playground.w) < (tile->x + TILE_WIDTH)){
+		printf("ENTRO recorte derecho\n");
+		tile->w = TILE_WIDTH - (tile->x + TILE_WIDTH -(e->playground.x + e->playground.w));
 	}
 
+	e->tileset_cut.h = tile->h;
+	e->tileset_cut.w = tile->w;
+
+	/* Sumamos el desplazamiento del screen */
+	dest.x = e->screen.x + tile->x - e->playground.x;
+	dest.y = e->screen.y + tile->y - e->playground.y;
+	dest.w = tile->w;
+	dest.h = tile->h;
+	printf("(x:%i,y:%i,w:%i,h:%i)\n",dest.x,dest.y,dest.w,dest.h);
+	SDL_RenderCopy(e->renderer,e->tileset,&(e->tileset_cut),&dest);
+
+	if(e->debug){
+		SDL_RenderPresent(e->renderer);
+		SDL_Delay(300);
+	}
+
+	/* Dibujamos las entidades que tiene ancladas */
+	if(entities != NULL){
+		lista_first(entities);
+		while(!lista_eol(entities)){
+			entity = lista_get(entities);
+			entity_draw(entity,&dest);
+			lista_next(entities);
+		}
+	}
+	
+
+	/* Restauramos el valor original de tile->y y tile->x */
+	tile->y = tile_y_aux;
+	tile->x = tile_x_aux;
+}
+
+void tile_corner(int x, int y, int *row, int *col){
+	int grid_row;
+	int grid_col;
+
+	grid_row = x / TILE_WIDTH;
+	grid_col = y / TILE_HEIGHT;
+
+	*row = grid_col - grid_row;
+	*col = grid_col + grid_row - 1;
+}
+
+void engine_show_screen_rect(engine_t *e, bool show){
+	e->show_screen_rect = show;
+}
+
+void engine_draw(engine_t *e){
 	SDL_Rect tile;
-	int64_t i,j,k,cols,rows,col,row;
-	int y1,y2,x1,x2;
-	int printed;
+	int64_t i,j,k,cols,rows,col,init_row;
+
+	int tile_sup_der_row;
+	int tile_sup_der_col;
+	int tile_sup_iz_row;
+	int tile_sup_iz_col;
+
+	int tile_inf_der_row;
+	int tile_inf_der_col;
+	int tile_inf_iz_row;
+	int tile_inf_iz_col;
+
+	int y1,y2,x1,x2,tile_x_init,tile_y_init;
+	int col_begin, col_end, row;
+	int tile_x, tile_y;
 	
 	printf("Comenzamos a dibujar\n");
 
-	/* Indicamos el punto inicial para el sprite (0,0) */
+	/* Determinamos los tile esquinas. Algunas pueden ver virtuales porque dan 
+		valores negativos en alguno de sus campos o ambos campos */
+	tile_corner(e->playground.x,e->playground.y,&tile_sup_iz_row,&tile_sup_iz_col);
+	tile_corner(e->playground.x + e->playground.w,e->playground.y,&tile_sup_der_row,&tile_sup_der_col);
+	tile_corner(e->playground.x,e->playground.y + e->playground.h,&tile_inf_iz_row,&tile_inf_iz_col);
+	tile_corner(e->playground.x + e->playground.w,e->playground.y + e->playground.h,&tile_inf_der_row,&tile_inf_der_col);
+	printf("Tile corners:\n");
+	printf("sup_der: (%i,%i)\n",tile_sup_der_row,tile_sup_der_col);
+	printf("sup_iz: (%i,%i)\n",tile_sup_iz_row,tile_sup_iz_col);
+	printf("inf_der: (%i,%i)\n",tile_inf_der_row,tile_inf_der_col);
+	printf("inf_iz: (%i,%i)\n",tile_inf_iz_row,tile_inf_iz_col);
 
-	tile.x = 0;
-	tile.y = 0;
+		/* Tile superior derecha... arranca siempre un tile menos en la fila y
+		termina un tile luego en la fila. Son tres columnas siempre que se pueda */
 
-	/* Mitad superior. Imprimimos a partir de la fila */
-	row = 0;
-	rows = e-> mosaic_rows;
-	while(row < rows){
-		j = 0;
-		i = row;
-		printed = 0;
-		while(j< e->mosaic_cols && i>=0){
-			draw_tile(e,i,j,&tile);
-			printed ++;
-			tile.x += TILE_WIDTH;
-			j++;
-			i--;
+	/* En las siguientes filas se van agregando un tile más antes y luego en la fila.
+		hasta que coincida con la columna el tile de la esquina superior izquierda o inferior derecha.
+		A partir de allí no se suma un tile ya que no debemos superar la coordenada del tile esquina.
+		Cuando se pasa en un tile al tile esquina, se comienza a decrementar en un tile. */
+
+	/* A partir de allí se resta un tile por fila hasta llegar a la fila del tile esquina inferior izquierda */ 
+
+	/* Arrancamos por la primer fila que coincide con la fila del tile_der_sup. */
+	/* La columna de inicio es una columna menos que la de tile_sup_der y la columna
+	   de fin es una mas que tile_sup_der */
+	tile.x = 0 - (tile_sup_der_row * (TILE_WIDTH/2));
+	tile.y = 0 + (tile_sup_der_row * (TILE_HEIGHT/2));
+	tile.x += (tile_sup_der_col - 1) * (TILE_WIDTH/2);
+	tile.y += (tile_sup_der_col - 1) * (TILE_HEIGHT/2);
+	col_begin = tile_sup_der_col - 1;
+	col_end = tile_sup_der_col + 1;
+
+	row = tile_sup_der_row;
+	while(row <= tile_inf_iz_row){
+		col = col_begin;
+		/* Recordamos las coordenadas del primer tile de la fila */
+		tile_x = tile.x;
+		tile_y = tile.y;
+		/* Por cada columna */
+		while(col < col_end){
+			if( row >= 0 && col >= 0 && row < e->mosaic_rows
+				&& col < e->mosaic_cols)
+					draw_tile(e,row,col,&tile);
+			tile.x += TILE_WIDTH/2;
+			tile.y += TILE_HEIGHT/2;
+			col++;
 		}
-		printf("\n");
-		printf("REstamos: %i\n",printed);
-		tile.y += TILE_HEIGHT/2;
-		tile.x -= (TILE_WIDTH/2 + TILE_WIDTH * printed);
 		row++;
-	}
-	printf("Restantes\n");
-	printf("Mosaic_cols:%i\n",e->mosaic_cols);
-
-	/* Mitad inferior. Imprimimos a partir de la columna */
-	row = row - 1;
-	col = 1;
-	tile.x += TILE_WIDTH;
-	while(col < e->mosaic_cols){
-		i = row;
-		j = col;
-		printed = 0;
-		while(j<e->mosaic_cols && i >= 0){
-			draw_tile(e,i,j,&tile);
-			tile.x += TILE_WIDTH;
-			i--;
-			j++;
-			printed++;
+		/* Si la fila siguiente es mayor a la fila del
+			tile_sup_iz por 1 unidad, entonces decremetamos
+			la columna de arranque en uno */
+		if(row > (tile_sup_iz_row + 1)){
+			tile.x = tile_x;
+			tile.y = tile_y  + TILE_HEIGHT;
+			col_begin++;
+		} else {
+			/* Sino podemos estar en la misma columna que tile_sup_iz
+				en cuyo caso mantenemos la columna de inicio. O no en
+				cuyo caso decrementamos la columna de inicio en uno.*/
+			if(col_begin > tile_sup_iz_col){
+				col_begin--;
+				tile.x = tile_x - TILE_WIDTH;
+				tile.y = tile_y;
+			} else {
+				/* Estamos en la columna de tile_sup_iz. mantenemos la columna */
+				tile.x = tile_x - TILE_WIDTH/2;
+				tile.y = tile_y + TILE_HEIGHT/2;
+			}
 		}
-		printf("\n");
-		col++;
-		tile.x -= (TILE_WIDTH/2 + TILE_WIDTH * (printed - 1));
-		tile.y += TILE_HEIGHT/2;
+
+		/* Si la fila siguiente es mayor a a la fila
+			del tile inf_der por 1 unidad entonce decrementamos
+			la columna de fin en una unidad */
+		if(row > (tile_inf_der_row + 1))
+			col_end--;
+		else 
+			/* Sino podemos estar en la misma columna que tile_inf_der
+				en cuyo caso mantenemos la columna de fin. O no en cuyo caso
+				incrementamos la columna de fin en una unidad */
+			if(col_end < tile_inf_iz_col)
+				col_end++;
 	}
 
-
-	/* Debug del recuadro del screen */
-	if(e->debug){
+	if(e->show_screen_rect){
 		x1 = e->screen.x;
 		x2 = e->screen.x + e->screen.w;
 		y1 = e->screen.y;
@@ -206,6 +268,8 @@ void engine_load_mosaic(engine_t *e, char *fileName){
 
 			e->mosaic[a2to1(e,i,j)].index = index;
 			e->mosaic[a2to1(e,i,j)].z = z;
+			/* De momento las entidades no se leen del archivo */
+			e->mosaic[a2to1(e,i,j)].entities = NULL;
 
 			if(e->debug)
 				printf("(%i,%i)",index,z);
@@ -214,6 +278,17 @@ void engine_load_mosaic(engine_t *e, char *fileName){
 			printf("\n");
 	}
 	fclose(fd);
+}
+
+void engine_add_entity(engine_t *e, int col, int row, entity_t *entity){
+	tile_t *tile;
+
+	tile = &(e->mosaic[a2to1(e,col,row)]);
+	if(tile->entities == NULL){
+		tile->entities = (lista_t*)malloc(sizeof(lista_t));
+	   lista_init((tile->entities),sizeof(entity_t));
+	}
+	lista_add(tile->entities, entity);
 }
 
 void engine_set_screen(engine_t *e, int x, int y, int w, int h){
