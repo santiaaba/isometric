@@ -92,26 +92,33 @@ void static tile_corner(engine_t *e,int x, int y, int *row, int *col){
 	int grid_row;
 	int grid_col;
 
-	x -= (e->tile_width)/2;		//	x = -40-32 = -72
+	if(x < 0)
+		x -= e->tile_width;	// -50 - 128 = -178
+
+	if(y < 0)
+		y -= e->tile_height;	// -50 - 64 = -114
 
 	grid_row = x / e->tile_width;	//	-1
-	grid_col = y / e->tile_height;//	0
+	grid_col = y / e->tile_height;//	-1
 
-	*row = grid_col - grid_row;	//	1
-	*col = grid_row + grid_col;	//	-1
+	*row = grid_col - grid_row;	//	0
+	*col = grid_row + grid_col;	//	-2
+
+//	printf("Antes:%i,%i\n",*row,*col);
 
 		/* Cuadrante superior izquierdo */
-	if( x < e->tile_width * grid_row && y < e->tile_height/2 * (grid_col + 1))
-		*col--;
+//	if( x < e->tile_width * grid_row && y < e->tile_height/2 * (grid_col + 1))
+//		*col--;
 		/* Cuadrante superior derecho */
-	if( x > e->tile_width * grid_row && y < e->tile_height/2 * (grid_col + 1))
-		*row--;
+//	if( x > e->tile_width * grid_row && y < e->tile_height/2 * (grid_col + 1))
+//		*row--;
 		/* Cuadrante inferior izquierdo */
-	if( x < e->tile_width * grid_row && y > e->tile_height/2 * (grid_col + 1))
-		*row++;
+//	if( x < e->tile_width * grid_row && y > e->tile_height/2 * (grid_col + 1))
+//		*row++;
 		/* Cuadrante inferior derecho */
-	if( x > e->tile_width * grid_row && y > e->tile_height/2 * (grid_col + 1))
-		*col++;
+//	if( x > e->tile_width * grid_row && y > e->tile_height/2 * (grid_col + 1))
+//		*col++;
+//	printf("Luego:%i,%i\n",*row,*col);
 }
 
 void engine_show_screen_rect(engine_t *e, bool show){
@@ -145,10 +152,10 @@ void engine_draw(engine_t *e){
 	tile_corner(e,e->playground.x + e->playground.w,e->playground.y + e->playground.h,&tile_inf_der_row,&tile_inf_der_col);
 	if(e->debug){
 		printf("Tile corners:\n");
-		printf("sup_der: (%i,%i)\n",tile_sup_der_row,tile_sup_der_col);
 		printf("sup_iz: (%i,%i)\n",tile_sup_iz_row,tile_sup_iz_col);
-		printf("inf_der: (%i,%i)\n",tile_inf_der_row,tile_inf_der_col);
+		printf("sup_der: (%i,%i)\n",tile_sup_der_row,tile_sup_der_col);
 		printf("inf_iz: (%i,%i)\n",tile_inf_iz_row,tile_inf_iz_col);
+		printf("inf_der: (%i,%i)\n",tile_inf_der_row,tile_inf_der_col);
 	}
 
 		/* Tile superior derecha... arranca siempre un tile menos en la fila y
