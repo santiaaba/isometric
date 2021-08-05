@@ -18,3 +18,20 @@ de dest hay que sumarle el punto de screen.
 
 Las coordenadas del playground solo sirven para determinar la parte a dibujar.
 
+
+/* Perdidos */
+
+Son las entidades que se deben dibujar pero que están en un tile que está por fuera de los que se van a dibujar. Los llamamos "perdidos".
+
+Cuando damos de alta un entity, se indica el tile onde debe anclarse. Se calcula además el conjunto de tiles que tapa. Cada tile posee una referencia al tile mas inferior que posee anclado un entity que hace que el primer tile quede oculto. De esta forma, con este tile inferior se recalculan los tile esquina para dibujar la imagen. Si bien puede haber mas de una entidad tapando el tile, se calcula y guarda el tile de la que se encuentre más abajo. Entonces... cada tile posee un indice del tile de más abajo. Y el tile de más abajo posee un listado de tiles que le apuntan para poder actualizarlos cuando el entity desaparezca o cambie de tile.
+
+
+
+/* Preparando los tochos */
+
+Una vez eterminado los tile equinas, los recorremos buscando los que poseen entidades.
+Encontrada una entidad que se debe recortar a la derecha, se recorta la misma y se
+asigna el trozo a la lista de "trozos" del tile correspondiente.
+
+Luego de calcular los Perdidos, hay que trozar los tochos para dibujar sus partes en orden.
+

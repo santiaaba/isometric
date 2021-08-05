@@ -9,29 +9,28 @@ void entity_create(entity_t **e, engine_t *engine){
 void entity_draw(entity_t *e, SDL_Rect *dest_tile){
 	SDL_Rect dest;
 	SDL_Rect cut;
+	int ixx;
+	int iyy;
+	int x;
+	int y;
 	int x1,x2,y1,y2;
 
-/*
-	printf("Entity - ixx:%i, iyy:%i, x_base:%i, cut_y:%i,cut_x:%i, cut_w:%i, cut_h:%i\n",
-			  e->ixx,e->iyy,e->x_base,e->cut.y,e->cut.x,e->cut.w,e->cut.h);
-*/
+	printf("Entity - ixx:%i, iyy:%i\n",e->ixx,e->iyy);
 
 	cut.x = e->cut.x;
 	cut.y = e->cut.y;
 	cut.w = e->cut.w;
 	cut.h = e->cut.h;
 
-	/* Nos paramos en el vertice (0,0) del tile */
-	dest.x = dest_tile->x + e->engine->tile_width/2;
-	dest.y = dest_tile->y;
+	/* Arrancamos desde el vertice inferior del tile isometrico. Que viene
+		siendo el centro de la linea orizonal del rectangulo dest_tile*/
+	ixx = dest_tile->x + e->engine->tile_width/2;
+	iyy = dest_tile->y + e->engine->tile_height;
 
-	/* Hacemos que el vertice de x_base coincida con el vertice (0,0)*/
-	dest.x -= e->x_base;
-	dest.y -= cut.h;
-
-	/* Movemos el vertie x_base al punto dentro del tile indicado por ixx, iyy */
+	/* Debemos calcular las coordenadas del dest que dibuja el entity */
+	dest.x = ixx - e->x_base;
+	dest.y = iyy - cut.h;
 	engine_iso_move(&dest,e->ixx,e->iyy);
-
 	dest.w = cut.w;
 	dest.h = cut.h;
 
@@ -79,43 +78,42 @@ void entity_draw(entity_t *e, SDL_Rect *dest_tile){
 void entity_cut(entity_t *e, int row, int col){
 	/* Divide la entidad para que sea dibujada a atrozos en su parte
 		derecha en el tile que corresponde */
-	int remaining_width,cut_x,cut_w,cut_h;
-	int tile_height;
+	int remaining_width,height,cut_x,cut_w,cut_h;
+	int tile_width,tile_height;
 	entity_t *cut_entity;
 	int x_aux;
 	
-	remaining_width = e->cut.w - (e->x_base + e->iyy);
+	tile_width = engine_tile_width(e->engine);
+	if(e->cut.w < tile_width && e->x_base == 0){
+		return;
+	}
+	tile_height = engine_tile_height(e->engine);
+
+	cut_x = e->x_base + tile_width/2 + e->iyy;
+
+	remaining_width = e->cut.w - (cut_x - e->cut.x);
 
 	if(remaining_width > 0){
-		tile_height = engine_tile_height(e->engine);
-		/* Acomodamos el entity actual */
 		e->cut.w -= remaining_width;
-		cut_x = e->cut.x + e->cut.w;
-		cut_h = e->cut.h - e->iyy/2;
+		cut_h = e->cut.h - (tile_height/2 + (e->iyy/2));
 		while(remaining_width > 0){
 			if(row - 1 < 0)
 				break;
 			else {
 				row--;
-
-				entity_create(&cut_entity,e->engine);
+				cut_entity = (entity_t*)malloc(sizeof(entity_t));
 				cut_entity->texture = e->texture;
 				cut_entity->cut.y = e->cut.y;
 				cut_entity->cut.x = cut_x;
 				cut_entity->cut.h = cut_h;
-
-				if(remaining_width >= tile_height)
-					cut_w = tile_height;
+				if(remaining_width >= tile_width/2)
+					cut_w = tile_width/2;
 				else
 					cut_w = remaining_width;
-
 				cut_entity->cut.w = cut_w;
 				cut_entity->ixx = e->ixx;
-				cut_entity->iyy = tile_height;
 				cut_entity->x_base = 0;
-
-				//printf("cut_x:%i, cut_h:%i, cut_w:%i\n",cut_x,cut_h,cut_w);
-
+				cut_entity->iyy = 0;
 				engine_place_entity(e->engine,row,col,cut_entity);
 	
 				remaining_width -= cut_w;
@@ -124,13 +122,6 @@ void entity_cut(entity_t *e, int row, int col){
 			}
 		}
 	}
-}
-
-int entity_ixx(entity_t *e){
-	return e->ixx;
-}
-int entity_iyy(entity_t *e){
-	return e->iyy;
 }
 
 void entity_position_set(entity_t *e, int ix, int iy){

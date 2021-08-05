@@ -7,44 +7,23 @@
 #include <stdbool.h>
 #include "rect.h"
 #include "lista.h"
+#include "types.h"
 #include "entity.h"
 
-/* Cada tile_t representa un mosaico. El index es el
-   número de mosaico en el archivo png que posee todos
-	los posibles mosaicos para el piso */
-
-typedef struct {
-   uint8_t z;
-   uint8_t index;  	  // numero de tile dentro del png
-	lista_t *entities;
-} tile_t;
-
-typedef struct {
-	tile_t *mosaic;
-	uint32_t mosaic_rows;		//Tamano fisico filas de mosaic
-	uint32_t mosaic_cols;		//tamaño fisico columnas de mosaic
-	int tile_width;				// Anchura de los tile para el suelo
-	int tile_height;				// Altura de los tile para el suelo
-	SDL_Texture *tileset;
-	SDL_Renderer *renderer;
-	SDL_Rect screen;
-	bool show_screen_rect;
-	SDL_Rect playground;
-	//rect_t *playground;
-	uint8_t tileset_cols;		//cantidad de columnas en el png
-	SDL_Rect tileset_cut;		//corte del archivo png
-	bool debug;
-} engine_t;
-
-void engine_create(	engine_t **e, SDL_Renderer *r);
+void engine_create(engine_t **e, SDL_Renderer *r);
 void engine_draw(engine_t *e);
 void engine_set_tileset(engine_t *e, char *fileName, int columns, int tile_width, int tile_height);
 void engine_set_screen(engine_t *e, int x, int y, int w, int h);
-void engine_add_entity(engine_t *e, int col, int row, entity_t *entity);
+void engine_place_entity(engine_t *e, int row, int col, entity_t *entity);
 void engine_set_playground(engine_t *e, uint32_t x, uint32_t y);
 void engine_load_mosaic(engine_t *e, char *fileName);
 void engine_debug(engine_t *e, bool debug);
+void engine_iso_move(SDL_Rect *rect, int ix, int iy);
+void engine_iso_cord(engine_t *e, int ix, int iy, int *x, int *y);
+void engine_iso_tile(engine_t *e, int ix, int iy, int *row, int *col, int *ixx, int *iyy);
 void engine_show_screen_rect(engine_t *e, bool show);
+int engine_tile_width(engine_t *e);
+int engine_tile_height(engine_t *e);
 uint32_t engine_mosaic_rows(engine_t *e);
 uint32_t engine_mosaic_cols(engine_t *e);
 void engine_free(engine_t *e);
