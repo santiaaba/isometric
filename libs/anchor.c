@@ -1,12 +1,5 @@
 #include "anchor.h"
 
-void anchor_init(anchor_t **a){
-	(*a) = (anchor_t *)malloc(sizeof(anchor_t));
-	(*a) -> first = NULL;
-	(*a) -> actual = NULL;
-	/* La lista tiene un primer elemento nulo */
-}
-
 void anchor_add(anchor_t *a, entity_t *e){
 	/* Agrega un entity de manera ordenada en base al ixx
 	   e iyy del entity. Primero los entity con iyy menor.

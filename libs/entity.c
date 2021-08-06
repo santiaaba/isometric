@@ -4,6 +4,7 @@ void entity_create(entity_t **e, engine_t *engine){
 	*e = (entity_t*)malloc(sizeof(entity_t));
 	(*e)->texture = NULL;
 	(*e)->engine = engine;
+	(*e)->anchor = NULL;
 }
 
 void entity_draw(entity_t *e, SDL_Rect *dest_tile){
@@ -81,6 +82,8 @@ void entity_cut(entity_t *e, int row, int col){
 		derecha en el tile que corresponde */
 	int remaining_width,cut_x,cut_w,cut_h;
 	int tile_height;
+	tile_t *tile;
+	anchor_t *neighbor, *parent;
 	entity_t *cut_entity;
 	int x_aux;
 	
@@ -92,6 +95,7 @@ void entity_cut(entity_t *e, int row, int col){
 		e->cut.w -= remaining_width;
 		cut_x = e->cut.x + e->cut.w;
 		cut_h = e->cut.h - e->iyy/2;
+		parent = e->anchor;
 		while(remaining_width > 0){
 			if(row - 1 < 0)
 				break;
@@ -115,8 +119,13 @@ void entity_cut(entity_t *e, int row, int col){
 				cut_entity->x_base = 0;
 
 				//printf("cut_x:%i, cut_h:%i, cut_w:%i\n",cut_x,cut_h,cut_w);
-
-				engine_place_entity(e->engine,row,col,cut_entity);
+				tile = engine_tile(e->engine,row,col);
+				neighbor = anchor_add(tile->entities,e);
+				/* Enganchamos con el entity original */
+				anchor_anchor(parent,neighbor);
+				parent = neighbor;
+			
+			//	engine_place_entity(e->engine,row,col,cut_entity);
 	
 				remaining_width -= cut_w;
 				cut_x += cut_w;
@@ -135,20 +144,46 @@ int entity_iyy(entity_t *e){
 
 void entity_position_set(entity_t *e, int ix, int iy){
 	int row,col;
+	tile_t *tile;
+	anchor_t *anchor;
+
+	/* Si la entidad esta cambiado de coordenadas, borramos
+		todos sus anchor que forman las partes y los generamos
+		nuevamente */
+	if((e->ix != ix || e->iy != iy) && e->anchor != NULL){
+		anchor_delete(e->anchor);
+	}
 	e->ix = ix;
 	e->iy = iy;
-	engine_iso_tile(e->engine,ix,iy,&row,&col,&(e->ixx),&(e->iyy));
-	engine_place_entity(e->engine,row,col,e);
+	/* Calculamos la col y row del tile y las coordenadas dentro del mismo */
+	engine_iso_tile(e->engine,ix,iy,tile,&(e->ixx),&(e->iyy));
+	
+	printf("POR\n");
+
+	/* Posicionamos el entity en el tile*/
+	e->anchor = anchor_add(tile->entities,e);
+
+	/* Lo trozamos */
+	entity_cut(e,row,col);
+
+	printf("POR\n");
 }
 
+/*
 void entity_position_add(entity_t *e, int addix, int addiy){
 	int row;
 	int col;
+
+	if((e->ix != ix || e->iy != iy) && e->anchor != NULL){
+		anchor_delete(e->anchor);
+	}
+
 	e->ix += addix;
 	e->iy += addiy;
 	engine_iso_tile(e->engine,e->ix,e->iy,&row,&col,&(e->ixx),&(e->iyy));
 	engine_place_entity(e->engine,row,col,e);
 }
+*/
 
 void entity_add_texture(entity_t *e, SDL_Texture *texture, int cut_w, int cut_h,
 								int cut_x, int cut_y, int x_base){

@@ -6,10 +6,20 @@ typedef struct {
 	int col;
 } m_index_t;
 
-typedef struct {
+typedef struct entity entity_t;
+typedef struct anchor anchor_t;
+typedef struct anchor {
+   entity_t *entity;
+   anchor_t *next;
+   anchor_t *prio;
+   anchor_t *neighbor;
+} anchor_t;
+
+typedef struct tile{
 	uint8_t z;
 	uint8_t index;					// numero de tile dentro del png
-	lista_t *entities;			// Entidades ancladas al tile
+	//lista_t *entities;			// Entidades ancladas al tile
+	anchor_t *entities;
 } tile_t;
 
 typedef struct {
@@ -28,7 +38,7 @@ typedef struct {
 	bool debug;
 } engine_t;
 
-typedef struct {
+typedef struct entity {
 	/* Posicion dentro del tile coord isometrica x
 		en el tile desde el vertice de la base.
 		Son valores negativos*/
@@ -43,6 +53,6 @@ typedef struct {
 	int original_x;			/* Ya que lo modificamos al cortar los tochos */
 	int original_w;			/* Ya que lo modificamos al cortar los tochos */
 	SDL_Rect borde;			/* Borde para deteccion de coliciones */
+	anchor_t *anchor;			/* Anclaje principal al tile donde inicia la imagen */
 } entity_t;
-
 #endif

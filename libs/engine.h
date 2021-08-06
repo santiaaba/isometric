@@ -10,6 +10,10 @@
 #include "types.h"
 #include "entity.h"
 
+anchor_t *anchor_add(anchor_t *a, entity_t *e);
+void anchor_anchor(anchor_t *a, anchor_t *b);
+void anchor_delete(anchor_t *a);
+
 void engine_create(engine_t **e, SDL_Renderer *r);
 void engine_draw(engine_t *e);
 void engine_set_tileset(engine_t *e, char *fileName, int columns, int tile_width, int tile_height);
@@ -20,7 +24,8 @@ void engine_load_mosaic(engine_t *e, char *fileName);
 void engine_debug(engine_t *e, bool debug);
 void engine_iso_move(SDL_Rect *rect, int ix, int iy);
 void engine_iso_cord(engine_t *e, int ix, int iy, int *x, int *y);
-void engine_iso_tile(engine_t *e, int ix, int iy, int *row, int *col, int *ixx, int *iyy);
+void engine_iso_tile(engine_t *e, int ix, int iy, tile_t *tile, int *ixx, int *iyy);
+tile_t *engine_tile(engine_t *e, int row, int col);
 void engine_show_screen_rect(engine_t *e, bool show);
 int engine_tile_width(engine_t *e);
 int engine_tile_height(engine_t *e);

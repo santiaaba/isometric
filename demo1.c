@@ -45,10 +45,13 @@ int main(char argc, char * argv[]){
 	azul_texture = IMG_LoadTexture(renderer,"tocho_azul.png");
 	character_texture = IMG_LoadTexture(renderer,"character1.png");
 
+	printf("ACA\n");
 	/* Tocho Rojo */
 	entity_create(&rojo,engine);
 	entity_add_texture(rojo,rojo_texture,128,159,0,0,64);
-	entity_position_set(rojo,300,69);
+	printf("ACA\n");
+	entity_position_set(rojo,69,300);
+	printf("ACA\n");
 
 	/* Tocho Azul */
 	entity_create(&azul,engine);
@@ -70,6 +73,7 @@ int main(char argc, char * argv[]){
 			if(event.type == SDL_WINDOWEVENT)
 				if(event.window.event == SDL_WINDOWEVENT_CLOSE)
 					end = true;
+/*
 			if(event.type == SDL_KEYDOWN)
 				printf("tecla precionado\n");
 				switch(event.key.keysym.sym){
@@ -99,13 +103,7 @@ int main(char argc, char * argv[]){
 						entity_position_add(character,0,0);
 						break;
 				}
-		}
-		
-		if(go_to > 0){
-			engine_set_playground(engine,-100,playgroundy);
-			go_to --;
-			playgroundy -= 2;
-
+*/
 		}
 
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
