@@ -12,12 +12,15 @@
 void entity_create(entity_t **e, engine_t *engine);
 void entity_draw(entity_t *e, SDL_Rect *tile);
 void entity_add_texture(entity_t *e, SDL_Texture *texture, int w,
-								int h, int x, int y, int x_base);
+								int h, int x, int y, int x_base,
+								int borde_w, int borde_h);
 void entity_position_set(entity_t *e, int ix, int iy);
 void entity_position_add(entity_t *e, int addix, int addiy);
 void entity_cut(entity_t *e, int row, int col);
-void entity_free(entity_t *e);
 int entity_ixx(entity_t *e);
 int entity_iyy(entity_t *e);
+void entity_add_border(entity_t *e, SDL_Rect *borde);
+bool entity_collision(entity_t *e1, entity_t *e2);
+void entity_free(entity_t **e);
 
 #endif

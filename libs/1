@@ -1,62 +1,5 @@
 #include "engine.h"
 
-/********************************
-			Lista Entities
-*********************************/
-void static entities_init(entities_t **a){
-	(*a) = (entities_t*)malloc(sizeof(entities_t));
-	(*a)->next = NULL;
-	(*a)->entity = NULL;
-}
-
-void entities_add(entities_t **a, entity_t *e){
-	entities_t *new;
-
-	entities_init(&new);
-	new->entity = e;
-
-	if((*a) != NULL)
-		new->next = (*a);
-	(*a) = new;
-}
-
-bool entities_delete(entities_t **a, entity_t *e){
-	bool encontro = false;
-	entities_t *aux, *prior;
-
-	aux = (*a);
-	prior = NULL;
-	while(!encontro && aux != NULL){
-		if(aux->entity != e){
-			prior = aux;
-			aux = aux->next;
-		} else
-			encontro = true;
-	}
-	if(encontro){
-		if(prior != NULL)
-			prior->next = aux->next;
-		else
-			(*a) = aux->next;
-		free(aux);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-void entities_empty(entities_t **e){
-	entities_t *aux, *prior;
-	aux = (*e);
-	(*e) = NULL;
-	while(aux != NULL){
-		prior = aux;
-		aux = aux->next;
-		free(prior);
-	}
-}
-
-
 /*****************************
            ANCHOR
 ******************************/
@@ -80,13 +23,25 @@ anchor_t *anchor_add(anchor_t *a, entity_t *e){
 	anchor_t *new;
 	bool encontro;
 
+	printf("Anchor ADD\n");
 	before = a;
+	printf("Anchor ADD %p\n",a);
 	aux = a->next;
+	printf("Anchor ADD\n");
+
 	anchor_init(&new);
+	printf("Hemos creado el nuevo anchor\n");
 	new -> entity = e;
+	printf("Hemos asignado la entidad\n");
+
+
+	printf("Tratando de agregar\n");
 	encontro = false;
 	while(!encontro && aux != NULL){
-		if(entity_ixx(new->entity) < entity_ixx(aux->entity)){
+		printf("Buscando\n");
+		if((entity_iyy(new->entity) < entity_iyy(aux->entity)) ||
+			(entity_iyy(new->entity) == entity_iyy(aux->entity)) &&
+			(entity_ixx(new->entity) < entity_ixx(aux->entity))){
 			encontro = true;
 		} else {
 			before = aux;
@@ -99,6 +54,7 @@ anchor_t *anchor_add(anchor_t *a, entity_t *e){
 
 	if(aux != NULL)
 		aux->prio = new;
+	printf("Agrego\n");
 	return new;
 }
 
@@ -109,30 +65,26 @@ void anchor_anchor(anchor_t *a, anchor_t *b){
 }
 
 void anchor_delete(anchor_t *a){
-	/* Es una eliminacion muy particular. Se eliminan todos
-		los nodos encadenados mediante sus neighbor y sus entidades
-		excepto la entidad del primer nodo que es la original. Las
-		demas son solo partes que no entraban en el tile de destino 
-	*/
+	/* Elimina un nodo. Si el nodo tiene vecino,
+		propaga la eliminación. La eliminacio
+		elimina demas las entity que posee cada nodo */
 
-	void anchor_delete_node(anchor_t *a, bool isFirst){
+	void anchor_delete_node(anchor_t *a){
 		if(a->neighbor != NULL){
-			anchor_delete_node(a->neighbor,false);
+			anchor_delete_node(a->neighbor);
 		}
 		if(a->prio != NULL)
 			a->prio->next = a->next;
 		if(a->next != NULL)
 			a->next->prio = a->prio;
-		/* Solo eliminamos los que no son el entity original */
-		if(!isFirst)
-			entity_free(&(a->entity));
+		entity_free(a->entity);
 		free(a);
 	}
 	if(a->prio == NULL){
 		printf("ERROR: Intentando borrar el priemr anchor");
 		exit(100);
 	} else {
-		anchor_delete_node(a,true);
+		anchor_delete_node(a);
 	}
 }
 
@@ -140,9 +92,7 @@ void anchor_delete(anchor_t *a){
           ENGINE 
 ******************************/
 
-/* Para el array dinamico que genera el mosaico del piso.
-	Dada una fila y columna, retorna el index dentro de
-	la matriz */
+/* Para el array dinamico que genera el mosaico del piso */
 int static a2to1(engine_t *e,uint16_t row, uint16_t col){
 	return row * e->mosaic_cols + col;
 }
@@ -169,26 +119,13 @@ void engine_iso_cord(engine_t *e, int ix, int iy, int *x, int *y){
 	*y = (ix + iy)/2;
 }
 
-bool engine_into_screen(engine_t *e,x,y,&ix,&iy){
-	/* Determina si las coordenadas x,y se encuentran
-		dentro del screen y de ser así retorna en ix e iy
-		las coordenadas isometricas a las que corresponden */
-	if( x > e->screen.x && x < e->screen.x + e->screen.w &&
-		 y > e->screen.y && y < e->screen.y + e->screen.h ){
-
-		ACA
-
-		return true;
-	} else
-		return false;
-}
-
-void engine_iso_tile(engine_t *e, int ix, int iy, int *row, int *col, int *ixx, int *iyy){
-	/* Dadas coordenadas isometricas, retorna el tile
-		correspondiente y las coordenadas dentro del mismo */
-	*row = iy / e->tile_height;
-	*col = ix / e->tile_height;
-	//printf("ROW:%iCOL:%i\n",*row,*col);
+void engine_iso_tile(engine_t *e, int ix, int iy, tile_t *tile, int *ixx, int *iyy){
+	/* Dadas coordenadas isometricas, retorna el index
+		del tile correspondiente y las coordenadas
+		dentro del mismo */
+	//*row = ix / e->tile_height;
+	//*col = iy / e->tile_height;
+	tile = &(e->mosaic[a2to1(e,(ix / e->tile_height),(iy / e->tile_height))]);
 	*ixx = ix % e->tile_height;
 	*iyy = iy % e->tile_height;
 }
@@ -205,7 +142,6 @@ void engine_create(engine_t **e, SDL_Renderer *r){
 	(*e)->renderer = r;
 	(*e)->debug = false;
 	(*e)->show_screen_rect = false;
-	(*e)->entities = NULL;
 }
 
 void engine_debug(engine_t *e, bool debug){
@@ -265,9 +201,9 @@ void static draw_tile(engine_t *e, uint64_t i, uint64_t j, SDL_Rect *tile){
 
 	/* Dibujamos las entidades */
 	aux = e->mosaic[a2to1(e,i,j)].entities->next;
-	//printf("Preparados a dibujar\n");
+	printf("Preparados a dibujar\n");
 	while(aux != NULL){
-		//printf("Dibujando!!!\n");
+		printf("Dibujando!!!\n");
 		entity_draw(aux->entity,&dest);
 		aux = aux->next;
 	}
@@ -299,28 +235,6 @@ void engine_show_screen_rect(engine_t *e, bool show){
 	e->show_screen_rect = show;
 }
 
-void engine_collisions(engine_t *e, entity_t *ee, entities_t **c){
-	/* Retorna un listado de las entidades con las que "ee" ha
-		colisionado. "c" debe recibirse como NULL o una lista
-		ya existente. Pero nunca un puntero sin inicializar */
-
-	entities_t *aux;
-
-	printf("Engine: buscando colisiones\n");
-	aux = e->entities;
-	while(aux != NULL){
-		printf("Comparando\n");
-		if(aux->entity != ee && entity_collision(aux->entity,ee)){
-			printf("Colisiono!!!!\n");
-			if((*c) == NULL)
-				entities_init(c);
-			else
-				entities_add(c,aux->entity);
-		}
-		aux = aux->next;
-	}
-}
-
 static void engine_cut_entities(	engine_t *e,
 											m_index_t *tile_sup_der,
 											m_index_t *tile_inf_der,
@@ -343,8 +257,8 @@ static void engine_cut_entities(	engine_t *e,
 					nuevamente si se ha movido. */
 				aux = e->mosaic[a2to1(e,row,col)].entities->next;
 				while(aux != NULL){
-					//printf("Partiendo (%i,%i)\n",row,col);
-					//entity_cut(aux->entity,row,col);
+					printf("Partiendo\n");
+					entity_cut(aux->entity,row,col);
 					aux = aux->next;
 				}
 			}
@@ -408,7 +322,7 @@ void engine_draw(engine_t *e){
 	/* La columna de inicio es una columna menos que la de tile_sup_der y la columna
 	   de fin es una mas que tile_sup_der */
 
-	//engine_cut_entities(e, &tile_sup_der, &tile_inf_der, &tile_inf_iz, &tile_sup_iz);
+	engine_cut_entities(e, &tile_sup_der, &tile_inf_der, &tile_inf_iz, &tile_sup_iz);
 
 	/* Ahora dibujamos tile por tile */
 	tile.x = 0 - (tile_sup_der.row * (e->tile_width/2));
@@ -530,17 +444,13 @@ void engine_load_mosaic(engine_t *e, char *fileName){
 	fclose(fd);
 }
 
-void engine_add_entity(engine_t *e, entity_t *entity){
-	entities_add(&(e->entities),entity);
-}
-/*
 void engine_place_entity(engine_t *e, int row, int col, entity_t *entity){
 	tile_t *tile;
 
 	tile = &(e->mosaic[a2to1(e,row,col)]);
 	anchor_add(tile->entities,entity);
 }
-*/
+
 void engine_set_screen(engine_t *e, int x, int y, int w, int h){
 	/* Screen representa la porcion de pantalla donde se dibujara */
 	e->screen.x = x;
